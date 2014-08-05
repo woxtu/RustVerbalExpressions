@@ -1,0 +1,9 @@
+[package]
+
+name = "RustVerbalExpressions"
+version = "0.0.1"
+authors = [ "woxtu <woxtup@gmail.com>" ]
+
+[[lib]]
+
+name = "verbal_expressions"
