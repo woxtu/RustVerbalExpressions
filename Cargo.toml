@@ -1,9 +1,7 @@
 [package]
-
 name = "verbal_expressions"
 version = "0.0.1"
 authors = [ "woxtu <woxtup@gmail.com>" ]
 
-[[lib]]
-
+[lib]
 name = "verbal_expressions"

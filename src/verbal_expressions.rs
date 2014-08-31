@@ -1,4 +1,4 @@
-#![crate_id = "verbal_expressions"]
+#![crate_name = "verbal_expressions"]
 #![crate_type = "lib"]
 #![desc = "Verbal Expressions implementation for Rust"]
 #![license = "MIT"]
