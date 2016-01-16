@@ -1,7 +1,7 @@
 #![crate_name = "verbal_expressions"]
 #![crate_type = "lib"]
-#![desc = "Verbal Expressions implementation for Rust"]
-#![license = "MIT"]
+//#![desc = "Verbal Expressions implementation for Rust"]
+//#![license = "MIT"]
 
 extern crate regex;
 use regex::Regex;
@@ -18,39 +18,42 @@ impl Verex {
   }
 
   pub fn new() -> Verex {
-    Verex::from("".to_string(), "".to_string(), "".to_string())
+    Verex::from(String::new(), String::new(), String::new())
   }
 
-  pub fn start_of_line(self) -> Verex {
-    Verex::from(self.prefix.append("^"), self.source, self.suffix)
+  pub fn start_of_line(mut self) -> Self {
+    self.prefix.push('^');
+    self
   }
 
-  pub fn end_of_line(self) -> Verex {
-    Verex::from(self.prefix, self.source, self.suffix.append("$"))
+  pub fn end_of_line(mut self) -> Self {
+    self.suffix.push('$');
+    self
   }
 
-  fn add(self, value: &str) -> Verex {
-    Verex::from(self.prefix, self.source.append(value), self.suffix)
+  fn add(mut self, value: &str) -> Self {
+    self.source.push_str(value);
+    self
   }
 
-  pub fn find(self, value: &str) -> Verex {
-    self.add(format!("(?:{})", value).as_slice())
+  pub fn find(self, value: &str) -> Self {
+    self.add(&format!("(?:{})", value))
   }
 
-  pub fn then(self, value: &str) -> Verex {
+  pub fn then(self, value: &str) -> Self {
     self.find(value)
   }
 
-  pub fn maybe(self, value: &str) -> Verex {
-    self.add(format!("(?:{})?", value).as_slice())
+  pub fn maybe(self, value: &str) -> Self {
+    self.add(&format!("(?:{})?", value))
   }
 
-  pub fn anything(self) -> Verex {
+  pub fn anything(self) -> Self {
     self.add("(?:.*)")
   }
 
   pub fn anything_but_not(self, value: &str) -> Verex {
-    self.add(format!("(?:[^{}]*)", value).as_slice())
+    self.add(&format!("(?:[^{}]*)", value))
   }
 
   pub fn something(self) -> Verex {
@@ -58,7 +61,7 @@ impl Verex {
   }
 
   pub fn something_but_not(self, value: &str) -> Verex {
-    self.add(format!("(?:[^{}]+)", value).as_slice())
+    self.add(&format!("(?:[^{}]+)", value))
   }
 
   pub fn line_break(self) -> Verex {
@@ -98,7 +101,7 @@ impl Verex {
   }
 
   pub fn any_of(self, value: &str) -> Verex {
-    self.add(format!("[{}]", value).as_slice())
+    self.add(&format!("[{}]", value))
   }
 
   pub fn any(self, value: &str) -> Verex {
@@ -106,19 +109,19 @@ impl Verex {
   }
 
   pub fn range(self, pairs: &[(&str, &str)]) -> Verex {
-    let ranges = pairs.iter().fold("".to_string(), |buf, &(from, to)| {
-      buf + format!("{}-{}", from, to)
+    let ranges = pairs.iter().fold(String::new(), |buf, &(from, to)| {
+      buf + &format!("{}-{}", from, to)
     });
 
-    self.add(format!("[{}]", ranges).as_slice())
+    self.add(&format!("[{}]", ranges))
   }
 
   pub fn add_modifier(self, modifier: &str) -> Verex {
-    self.add(format!("(?{})", modifier).as_slice())
+    self.add(&format!("(?{})", modifier))
   }
 
   pub fn remove_modifier(self, modifier: &str) -> Verex {
-    self.add(format!("(?-{})", modifier).as_slice())
+    self.add(&format!("(?-{})", modifier))
   }
 
   pub fn with_any_case(self) -> Verex {
@@ -137,7 +140,7 @@ impl Verex {
     self.remove_modifier("m")
   }
 
-  pub fn multiple(self, value: &str, counts: &[int]) -> Verex {
+  pub fn multiple(self, value: &str, counts: &[i32]) -> Verex {
     match counts.len() {
       0 => self.then(value).one_or_more(),
       1 => self.then(value).count(counts[0]),
@@ -153,30 +156,33 @@ impl Verex {
     self.add("*")
   }
 
-  pub fn count(self, count: int) -> Verex {
-    self.add(format!("{{{}}}", count).as_slice())
+  pub fn count(self, count: i32) -> Verex {
+    self.add(&format!("{{{}}}", count))
   }
 
-  pub fn count_range(self, from: int, to: int) -> Verex {
-    self.add(format!("{{{},{}}}", from, to).as_slice())
+  pub fn count_range(self, from: i32, to: i32) -> Verex {
+    self.add(&format!("{{{},{}}}", from, to))
   }
 
-  pub fn at_least(self, from: int) -> Verex {
-    self.add(format!("{{{},}}", from).as_slice())
+  pub fn at_least(self, from: i32) -> Verex {
+    self.add(&format!("{{{},}}", from))
   }
 
-  pub fn or(self, value: &str) -> Verex {
-    let p = if self.prefix.as_slice().contains("(") { "" } else { "(" };
-    let s = if self.suffix.as_slice().contains(")") { "" } else { ")" };
-    Verex::from(self.prefix.append(p), self.source, self.suffix.append(s)).add(")|(").then(value)
+  pub fn or(mut self, value: &str) -> Self {
+    let p = if self.prefix.contains("(") { "" } else { "(" };
+    let s = if self.suffix.contains(")") { "" } else { ")" };
+    self.prefix.push_str(p);
+    self.suffix.push_str(s);
+    self.add(")|(").then(value)
   }
 
-  pub fn begin_capture(self) -> Verex {
-    Verex::from(self.prefix, self.source, self.suffix.append(")")).add("(")
+  pub fn begin_capture(mut self) -> Self {
+    self.suffix.push(')');
+    self.add("(")
   }
 
   pub fn end_capture(self) -> Verex {
-    let suffix = self.suffix.as_slice().slice(0, self.suffix.len() - 1).to_string();
+    let suffix = self.suffix[0..self.suffix.len()-1].to_string();
     Verex::from(self.prefix, self.source, suffix).add(")")
   }
 
@@ -186,7 +192,7 @@ impl Verex {
 
   pub fn captures(self, text: &str) -> Vec<String> {
     match self.as_regex().captures(text) {
-      Some(captures) => captures.iter().map(|x| x.to_string()).collect(),
+      Some(captures) => captures.iter().map(|x| x.expect("captures method failed").to_string()).collect(),
       None => Vec::new(),
     }
   }
@@ -199,12 +205,12 @@ impl Verex {
     self.as_regex().replace(text, rep)
   }
 
-  pub fn as_str(self) -> String {
-    self.prefix + self.source + self.suffix
+  pub fn as_string(self) -> String {
+    self.prefix + &self.source + &self.suffix
   }
 
   pub fn as_regex(self) -> Regex {
-    Regex::new(self.as_str().as_slice()).unwrap()
+    Regex::new(&self.as_string()).unwrap()
   }
 }
 
@@ -214,30 +220,30 @@ mod test {
 
   #[test]
   fn test_start_of_line() {
-    assert_eq!(Verex::new().start_of_line().as_str().as_slice(), "^");
+    assert_eq!(&Verex::new().start_of_line().as_string(), "^");
   }
 
   #[test]
   fn test_end_of_line() {
-    assert_eq!(Verex::new().end_of_line().as_str().as_slice(), "$");
+    assert_eq!(&Verex::new().end_of_line().as_string(), "$");
   }
 
   #[test]
   fn test_add() {
-    assert_eq!(Verex::new().add("Karen").as_str().as_slice(), "Karen");
-    assert_eq!(Verex::new().add("Karen").add("Karen").as_str().as_slice(), "KarenKaren");
+    assert_eq!(&Verex::new().add("Karen").as_string(), "Karen");
+    assert_eq!(&Verex::new().add("Karen").add("Karen").as_string(), "KarenKaren");
   }
     
   #[test]
   fn test_find() {
-    assert!(Verex::new().find("Karen").is_match("Karen"))
-    assert!(!Verex::new().find("Karen").is_match("Alice"))
+    assert!(Verex::new().find("Karen").is_match("Karen"));
+    assert!(!Verex::new().find("Karen").is_match("Alice"));
   }
 
   #[test]
   fn test_then() {
-    assert!(Verex::new().then("Karen").is_match("Karen"))
-    assert!(!Verex::new().then("Karen").is_match("Alice"))
+    assert!(Verex::new().then("Karen").is_match("Karen"));
+    assert!(!Verex::new().then("Karen").is_match("Alice"));
   }
 
   #[test]
@@ -339,20 +345,20 @@ mod test {
 
   #[test]
   fn test_range() {
-    assert!(Verex::new().range([("a", "z")]).is_match("x"));
-    assert!(!Verex::new().range([("a", "z")]).is_match("*"));
-    assert!(Verex::new().range([("a", "z"), ("A", "Z")]).is_match("X"));
-    assert!(!Verex::new().range([("a", "z"), ("A", "Z")]).is_match("*"));
+    assert!(Verex::new().range(&[("a", "z")]).is_match("x"));
+    assert!(!Verex::new().range(&[("a", "z")]).is_match("*"));
+    assert!(Verex::new().range(&[("a", "z"), ("A", "Z")]).is_match("X"));
+    assert!(!Verex::new().range(&[("a", "z"), ("A", "Z")]).is_match("*"));
   }
 
   #[test]
   fn test_add_modifier() {
-    assert_eq!(Verex::new().add_modifier("x").as_str().as_slice(), "(?x)");
+    assert_eq!(&Verex::new().add_modifier("x").as_string(), "(?x)");
   }
 
   #[test]
   fn test_remove_modifier() {
-    assert_eq!(Verex::new().remove_modifier("x").as_str().as_slice(), "(?-x)");
+    assert_eq!(&Verex::new().remove_modifier("x").as_string(), "(?-x)");
   }
 
   #[test]
@@ -373,9 +379,9 @@ mod test {
 
   #[test]
   fn test_multiple() {
-    assert_eq!(Verex::new().multiple("x", []).as_str().as_slice(), "(?:x)+");
-    assert_eq!(Verex::new().multiple("x", [1]).as_str().as_slice(), "(?:x){1}");
-    assert_eq!(Verex::new().multiple("x", [1, 2]).as_str().as_slice(), "(?:x){1,2}");
+    assert_eq!(&Verex::new().multiple("x", &[]).as_string(), "(?:x)+");
+    assert_eq!(&Verex::new().multiple("x", &[1]).as_string(), "(?:x){1}");
+    assert_eq!(&Verex::new().multiple("x", &[1, 2]).as_string(), "(?:x){1,2}");
   }
 
   #[test]
@@ -417,12 +423,12 @@ mod test {
   #[test]
   fn test_begin_capture() {
     let v = Verex::new().begin_capture().then("K");
-    assert_eq!(v.captures("Karen").get(1).as_slice(), "K");
+    assert_eq!(&v.captures("Karen")[1], "K");
   }
 
   #[test]
   fn test_end_capture() {
     let v = Verex::new().begin_capture().then("K").end_capture().then("aren");
-    assert_eq!(v.captures("Karen").get(1).as_slice(), "K");
+    assert_eq!(&v.captures("Karen")[1], "K");
   }
 }
