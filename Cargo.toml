@@ -1,7 +1,10 @@
 [package]
 name = "verbal_expressions"
-version = "0.0.1"
+version = "0.1.0"
 authors = [ "woxtu <woxtup@gmail.com>" ]
+description = "Verbal Expressions implementation for Rust"
+repository = "https://github.com/woxtu/RustVerbalExpressions"
+license = "MIT"
 
 [lib]
 name = "verbal_expressions"
